@@ -1,0 +1,14 @@
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+
+# Local runtime state/logs
+logs/
+sync_state.json
+
+# OAuth secrets/tokens
+credentials.json
+token.pickle

@@ -1,0 +1,110 @@
+{
+  "spreadsheet_id": "10DpSr-N4jOU5lhNp-8m0F_0KH5iIKBuTlsAZ3wOtNq0",
+  "gmail": {
+    "hours_back": 48,
+    "max_results_per_label": 20,
+    "sleep_interval_seconds": 0.1
+  },
+  "sheets": {
+    "booking": {
+      "name": "EMAIL_BOOKING",
+      "labels": ["KLOOK_BOOKING", "12GO_BOOKING", "BAOLAU_BOOKING"],
+      "columns": {
+        "A": "label",
+        "B": "type",
+        "C": "subject",
+        "D": "body",
+        "E": "thread_link",
+        "F": "email_date",
+        "G": "week_number",
+        "H": "date_type",
+        "I": "order_id",
+        "V": "pickup_point",
+        "W": "dropoff_point"
+      }
+    },
+    "confirmed": {
+      "name": "EMAIL_XÁC_NHẬN",
+      "labels": ["KLOOK_CONFIRMED", "12GO_CONFIRMED", "BAOLAU_CONFIRMED", "Klook Độc Quyền - Confirmed"],
+      "columns": {
+        "A": "label",
+        "B": "empty",
+        "C": "subject",
+        "D": "body",
+        "E": "thread_link",
+        "F": "email_date",
+        "G": "week_number",
+        "H": "date_type",
+        "I": "order_id"
+      }
+    },
+    "cancel": {
+      "name": "EMAIL_HỦY",
+      "labels": ["KLOOK_CONFIRMED_CANCEL", "KLOOK_UNCONFIRMED_CANCEL", "BAOLAU_CANCEL", "12GO_CANCEL", "Klook Độc Quyền - Cancel"],
+      "columns": {
+        "A": "label",
+        "B": "empty",
+        "C": "subject",
+        "D": "body",
+        "E": "thread_link",
+        "F": "email_date",
+        "G": "week_number",
+        "H": "date_type",
+        "I": "order_id"
+      }
+    },
+    "ctrip": {
+      "name": "EMAIL_CTRIP",
+      "labels": ["CTRIP", "CTRIP CANCEL"]
+    },
+    "seatos": {
+      "name": "EMAIL_SEATOS",
+      "labels": ["SeatOS-Booking", "SeatOS-Pending", "SeatOS - Unchecked"]
+    },
+    "review": {
+      "name": "EMAIL_REVIEW",
+      "labels": ["KLOOK REVIEW", "12GO_REVIEW"]
+    },
+    "klook_special": {
+      "name": "EMAIL_KLOOK_SPECIAL",
+      "labels": ["Klook Độc Quyền"]
+    }
+  },
+  "logging": {
+    "log_file": "logs/email_logger_{date}.log",
+    "log_level": "INFO",
+    "console_output": true
+  },
+  "extraction_patterns": {
+    "order_id": {
+      "KLOOK": [
+        "(?:Order ID|Booking reference ID):\\s*([A-Z0-9-]+)",
+        "-\\s+([A-Z0-9]+)$"
+      ],
+      "12GO": [
+        "12GO\\s*[-_]?([A-Z0-9-]+)",
+        "12GO\\s*(\\w+)"
+      ],
+      "BAOLAU": [
+        "\\(([^)]+)\\)",
+        "\\[([^\\]]+)\\]"
+      ],
+      "CTRIP": [
+        "(?:CT|CTRIP)[_-]?([A-Z0-9]+)"
+      ],
+      "SEATOS": [
+        "(?:ST|SeatOS)[_-]?([A-Z0-9]+)"
+      ]
+    },
+    "route_points": {
+      "12GO": {
+        "pattern_1": "From:\\s*(.+?)\\s+To:\\s*(.+?)(?:\\n|$)",
+        "pattern_2": "(.+?)\\s*[→->]\\s*(.+?)(?:\\n|$)"
+      },
+      "KLOOK": {
+        "pickup_pattern": "Pick-up location:\\s*(.+?)(?:\\n|Drop-off)",
+        "dropoff_pattern": "Drop-off location:\\s*(.+?)(?:\\n|$)"
+      }
+    }
+  }
+}
