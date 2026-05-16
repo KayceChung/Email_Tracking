@@ -1059,6 +1059,9 @@ def run_once() -> bool:
             continue
 
         existing_keys = get_existing_row_keys(worksheet, sheet_type)
+        worksheet_url = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/edit#gid={worksheet.id}"
+        print(f"   Tab URL: {worksheet_url}")
+        print(f"   Existing dedupe keys: {len(existing_keys)}")
         sheet_new_rows = 0
 
         for label in config['labels']:
