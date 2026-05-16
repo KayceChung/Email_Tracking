@@ -734,7 +734,8 @@ def append_to_sheet(worksheet, rows: List[List], sheet_type: str) -> int:
     if "Message_id" not in source_headers:
         raise ValueError(f"Header 'Message_id' không tồn tại trong cấu hình cho sheet_type '{sheet_type}'")
 
-    # Lấy toàn bộ dữ liệu hiện có trong bảng tính
+
+    # Lấy toàn bộ dữ liệu hiện có trong bảng tính (gồm cả header)
     existing_data = worksheet.get_all_values()
     message_id_index = source_headers.index("Message_id")
     existing_message_ids = set(
@@ -750,8 +751,8 @@ def append_to_sheet(worksheet, rows: List[List], sheet_type: str) -> int:
 
     filtered_rows = _normalize_rows_for_sheet(filtered_rows, len(source_headers))
 
-    # Lấy header từ worksheet - chỉ lấy phần header thực tế (không lấy cột trống đầu)
-    worksheet_headers_raw = worksheet.row_values(1) if worksheet.row_count > 0 else []
+    # Lấy header từ existing_data nếu có, không gọi lại API
+    worksheet_headers_raw = existing_data[0] if existing_data else []
     worksheet_headers = worksheet_headers_raw[:len(source_headers)] if worksheet_headers_raw else []
 
     # Kiểm tra xem header có khớp không, nếu khớp thì không cần remap
