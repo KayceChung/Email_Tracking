@@ -70,12 +70,14 @@ jobs:
       - name: Verify script syntax
         run: python -m py_compile gmail_email_logger.py
 
+      - name: Reset local sync state for this run
+        run: rm -f sync_state.json
+
       - name: Run logger (single cycle)
         env:
           LOGGER_RUN_MODE: once
           GMAIL_OAUTH_MODE: local
-          LOGGER_IGNORE_STATE: "false"
-          LOGGER_STATE_FILE: sync_state.json
+          LOGGER_IGNORE_STATE: "true"
           GMAIL_FETCH_ALL: "false"
           GMAIL_HOURS_BACK: "24"
           GMAIL_MAX_RESULTS_PER_LABEL: "0"
