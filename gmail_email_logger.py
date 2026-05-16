@@ -661,21 +661,21 @@ def _append_rows_with_retry(worksheet, chunk: List[List]):
     delay = 2.0
     for attempt in range(_SHEET_MAX_RETRIES):
         try:
-            print(f"      [>] Append {len(chunk)} hang vao worksheet '{console_text(worksheet.title)}'...")
-            # Buoc Sheets append theo bang bat dau tai A1, tranh tu dong nhan sai table range
-            # (co the gay lech cot neu sheet tung co du lieu bat dau o cot C/F...).
+            print(f"      [>] Append {len(chunk)} hàng vào worksheet '{console_text(worksheet.title)}'...")
             worksheet.append_rows(chunk, value_input_option='USER_ENTERED', table_range='A1')
-            print(f"      [OK] Append thanh cong")
+            print(f"      [OK] Append thành công")
             return
         except Exception as e:
             err = str(e).lower()
             is_quota = any(k in err for k in ('429', 'quota', 'rate', 'resource exhausted'))
             if is_quota and attempt < _SHEET_MAX_RETRIES - 1:
                 wait = delay * (2 ** attempt)
-                print(f"    [WARN] Quota exceeded, cho {wait:.0f}s roi thu lai ({attempt + 1}/{_SHEET_MAX_RETRIES})...")
+                print(f"    [WARN] Quota exceeded, chờ {wait:.0f}s rồi thử lại ({attempt + 1}/{_SHEET_MAX_RETRIES})...")
                 time.sleep(wait)
             else:
                 print(f"      [ERR] Append failed: {repr(e)}")
+                if not is_quota:
+                    print("      [DEBUG] Lỗi không xác định, kiểm tra lại logic hoặc kết nối API.")
                 raise
 
 
