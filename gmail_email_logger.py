@@ -722,42 +722,49 @@ def _remap_rows_to_worksheet_headers(
 
 
 def append_to_sheet(worksheet, rows: List[List], sheet_type: str) -> int:
-    """Ghi nhiều dong vào sheet theo chunk để tránh vượt payload và quota."""
+    """Ghi nhiều dòng vào sheet theo chunk để tránh vượt payload và quota."""
     if not rows:
-        print(f"  [INFO] Khong co du lieu moi cho {sheet_type}")
+        print(f"  [INFO] Không có dữ liệu mới cho {sheet_type}")
+        return 0
+
+    # Lấy toàn bộ dữ liệu hiện có trong bảng tính
+    existing_data = worksheet.get_all_values()
+    existing_message_ids = set(row[STANDARD_HEADERS.index("Message_id")] for row in existing_data[1:] if len(row) > STANDARD_HEADERS.index("Message_id"))
+
+    # Lọc các dòng dữ liệu mới không trùng lặp
+    filtered_rows = [row for row in rows if row[STANDARD_HEADERS.index("Message_id")] not in existing_message_ids]
+
+    if not filtered_rows:
+        print(f"  [INFO] Không có dữ liệu mới sau khi lọc trùng lặp cho {sheet_type}")
         return 0
 
     source_headers = SHEET_HEADERS.get(sheet_type, STANDARD_HEADERS)
-    rows = _normalize_rows_for_sheet(rows, len(source_headers))
+    filtered_rows = _normalize_rows_for_sheet(filtered_rows, len(source_headers))
 
     # Lấy header từ worksheet - chỉ lấy phần header thực tế (không lấy cột trống đầu)
     worksheet_headers_raw = worksheet.row_values(1) if worksheet.row_count > 0 else []
-    # Cắt bớt các cột trống ở cuối
     worksheet_headers = worksheet_headers_raw[:len(source_headers)] if worksheet_headers_raw else []
-    
+
     # Kiểm tra xem header có khớp không, nếu khớp thì không cần remap
     if worksheet_headers and _canonical_header_name(worksheet_headers[0] if worksheet_headers else '') == _canonical_header_name(source_headers[0]):
-        # Header khớp từ cột A, không cần remap
         if len(worksheet_headers) >= len(source_headers):
-            rows = _remap_rows_to_worksheet_headers(rows, source_headers, worksheet_headers)
+            filtered_rows = _remap_rows_to_worksheet_headers(filtered_rows, source_headers, worksheet_headers)
         else:
-            rows = _normalize_rows_for_sheet(rows, len(source_headers))
+            filtered_rows = _normalize_rows_for_sheet(filtered_rows, len(source_headers))
     else:
-        # Header không khớp - fallback theo chuẩn code
-        rows = _normalize_rows_for_sheet(rows, len(source_headers))
+        filtered_rows = _normalize_rows_for_sheet(filtered_rows, len(source_headers))
 
-    print(f"  [WRITE] Bat dau ghi {len(rows)} dong vao sheet '{console_text(worksheet.title)}' ({sheet_type})")
-    total = len(rows)
+    print(f"  [WRITE] Bắt đầu ghi {len(filtered_rows)} dòng vào sheet '{console_text(worksheet.title)}' ({sheet_type})")
+    total = len(filtered_rows)
     written = 0
     for i in range(0, total, _SHEET_WRITE_CHUNK):
-        chunk = rows[i:i + _SHEET_WRITE_CHUNK]
-        print(f"    Chunk {i//(_SHEET_WRITE_CHUNK)+1}: ghi dong {i+1}-{min(i+_SHEET_WRITE_CHUNK, total)}")
+        chunk = filtered_rows[i:i + _SHEET_WRITE_CHUNK]
+        print(f"    Chunk {i//(_SHEET_WRITE_CHUNK)+1}: ghi dòng {i+1}-{min(i+_SHEET_WRITE_CHUNK, total)}")
         try:
             before_count = _count_nonempty_first_col(worksheet)
             _append_rows_with_retry(worksheet, chunk)
             expected_after = before_count + len(chunk)
 
-            # Một số lần Sheets phản hồi thành công nhưng cập nhật chưa phản ánh ngay.
             actual_after = before_count
             for _ in range(3):
                 actual_after = _count_nonempty_first_col(worksheet)
@@ -1120,7 +1127,7 @@ def run_once() -> bool:
             print(f"    [GET_MSGS] Completed. fetched_any={fetched_any}, buffer size={len(buffer)}")
 
             if not fetched_any and not buffer:
-                print(f"  [INFO] Khong co email moi tu '{console_text(label)}'")
+                print(f"  [INFO] Không có email mới từ '{console_text(label)}'")
                 done_labels.add(label)
                 state[f'done_labels_{sheet_type}'] = list(done_labels)
                 save_state(state)
