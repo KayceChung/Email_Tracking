@@ -650,6 +650,12 @@ _SHEET_WRITE_DELAY = 1.2   # Giây chờ giữa các chunk để tránh quota 42
 _SHEET_MAX_RETRIES = 5     # Số lần retry khi gặp quota error
 
 
+def _count_nonempty_first_col(worksheet) -> int:
+    """Đếm số ô có dữ liệu ở cột A (bao gồm header)."""
+    values = worksheet.col_values(1)
+    return sum(1 for v in values if str(v).strip() != "")
+
+
 def _append_rows_with_retry(worksheet, chunk: List[List]):
     """Gửi 1 chunk với retry exponential backoff khi gặp 429/quota."""
     delay = 2.0
@@ -747,7 +753,25 @@ def append_to_sheet(worksheet, rows: List[List], sheet_type: str) -> int:
         chunk = rows[i:i + _SHEET_WRITE_CHUNK]
         print(f"    Chunk {i//(_SHEET_WRITE_CHUNK)+1}: ghi dong {i+1}-{min(i+_SHEET_WRITE_CHUNK, total)}")
         try:
+            before_count = _count_nonempty_first_col(worksheet)
             _append_rows_with_retry(worksheet, chunk)
+            expected_after = before_count + len(chunk)
+
+            # Một số lần Sheets phản hồi thành công nhưng cập nhật chưa phản ánh ngay.
+            actual_after = before_count
+            for _ in range(3):
+                actual_after = _count_nonempty_first_col(worksheet)
+                if actual_after >= expected_after:
+                    break
+                time.sleep(1)
+
+            if actual_after < expected_after:
+                raise RuntimeError(
+                    "Append reported success but sheet row count did not increase "
+                    f"as expected. before={before_count}, expected_after={expected_after}, "
+                    f"actual_after={actual_after}"
+                )
+
             written += len(chunk)
             print(f"  [OK] [{sheet_type}] Da ghi {written}/{total} dong")
         except Exception as e:
@@ -794,7 +818,11 @@ def ensure_sheet_headers(spreadsheet):
         header_range = f"A1:{end_col}1"
         print(f"  [UPDATE] Cap nhat header cho sheet '{console_text(sheet_name)}' (range: {header_range})...")
         call_with_retry(
-            lambda: worksheet.update(header_range, [headers], value_input_option='USER_ENTERED'),
+            lambda: worksheet.update(
+                range_name=header_range,
+                values=[headers],
+                value_input_option='USER_ENTERED'
+            ),
             f"Sheets update header('{sheet_name}')"
         )
         print(f"  [OK] Header da duoc cap nhat cho sheet: {console_text(sheet_name)}")
@@ -969,6 +997,10 @@ def run_once() -> bool:
         gmail_service = authenticate_gmail()
         gs = authenticate_gspread()
         spreadsheet = open_spreadsheet_with_retry(gs, SPREADSHEET_ID)
+        print(
+            f"[INFO] Dang ghi vao spreadsheet: title='{console_text(spreadsheet.title)}', "
+            f"id='{SPREADSHEET_ID}'"
+        )
         call_with_retry(
             lambda: ensure_sheet_headers(spreadsheet),
             "Sheets ensure_sheet_headers"
