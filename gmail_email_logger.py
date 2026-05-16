@@ -727,18 +727,26 @@ def append_to_sheet(worksheet, rows: List[List], sheet_type: str) -> int:
         print(f"  [INFO] Không có dữ liệu mới cho {sheet_type}")
         return 0
 
+    source_headers = SHEET_HEADERS.get(sheet_type, STANDARD_HEADERS)
+
+    # Kiểm tra nếu 'Message_id' có trong header
+    if "Message_id" not in source_headers:
+        raise ValueError(f"Header 'Message_id' không tồn tại trong cấu hình cho sheet_type '{sheet_type}'")
+
     # Lấy toàn bộ dữ liệu hiện có trong bảng tính
     existing_data = worksheet.get_all_values()
-    existing_message_ids = set(row[STANDARD_HEADERS.index("Message_id")] for row in existing_data[1:] if len(row) > STANDARD_HEADERS.index("Message_id"))
+    message_id_index = source_headers.index("Message_id")
+    existing_message_ids = set(
+        row[message_id_index] for row in existing_data[1:] if len(row) > message_id_index
+    )
 
     # Lọc các dòng dữ liệu mới không trùng lặp
-    filtered_rows = [row for row in rows if row[STANDARD_HEADERS.index("Message_id")] not in existing_message_ids]
+    filtered_rows = [row for row in rows if row[message_id_index] not in existing_message_ids]
 
     if not filtered_rows:
         print(f"  [INFO] Không có dữ liệu mới sau khi lọc trùng lặp cho {sheet_type}")
         return 0
 
-    source_headers = SHEET_HEADERS.get(sheet_type, STANDARD_HEADERS)
     filtered_rows = _normalize_rows_for_sheet(filtered_rows, len(source_headers))
 
     # Lấy header từ worksheet - chỉ lấy phần header thực tế (không lấy cột trống đầu)
