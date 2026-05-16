@@ -30,15 +30,6 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Restore sync state cache
-        id: restore-sync-state
-        uses: actions/cache/restore@v4
-        with:
-          path: sync_state.json
-          key: sync-state-${{ github.ref_name }}-${{ github.run_id }}
-          restore-keys: |
-            sync-state-${{ github.ref_name }}-
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -88,10 +79,3 @@ jobs:
           GMAIL_REQUEST_DELAY_SECONDS: "0"
           SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
         run: python gmail_email_logger.py
-
-      - name: Save sync state cache
-        if: always() && hashFiles('sync_state.json') != ''
-        uses: actions/cache/save@v4
-        with:
-          path: sync_state.json
-          key: sync-state-${{ github.ref_name }}-${{ github.run_id }}

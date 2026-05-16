@@ -9,6 +9,7 @@ import pickle
 import json
 import re
 import base64
+import sys
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Tuple, Set, Optional, Any, Callable
 from urllib.parse import parse_qs, urlparse
@@ -714,11 +715,11 @@ def _remap_rows_to_worksheet_headers(
     return remapped
 
 
-def append_to_sheet(worksheet, rows: List[List], sheet_type: str):
+def append_to_sheet(worksheet, rows: List[List], sheet_type: str) -> int:
     """Ghi nhiều dong vào sheet theo chunk để tránh vượt payload và quota."""
     if not rows:
         print(f"  [INFO] Khong co du lieu moi cho {sheet_type}")
-        return
+        return 0
 
     source_headers = SHEET_HEADERS.get(sheet_type, STANDARD_HEADERS)
     rows = _normalize_rows_for_sheet(rows, len(source_headers))
@@ -751,10 +752,14 @@ def append_to_sheet(worksheet, rows: List[List], sheet_type: str):
             print(f"  [OK] [{sheet_type}] Da ghi {written}/{total} dong")
         except Exception as e:
             print(f"  [ERR] [{sheet_type}] Loi ghi chunk {i}--{i + len(chunk)}: {e}")
-            return
+            raise RuntimeError(
+                f"Khong the ghi du lieu vao sheet '{worksheet.title}' ({sheet_type})"
+            ) from e
         # Delay giữa các chunk để tránh quota.
         if i + _SHEET_WRITE_CHUNK < total:
             time.sleep(_SHEET_WRITE_DELAY)
+
+    return written
 
 
 def ensure_sheet_headers(spreadsheet):
@@ -1060,9 +1065,9 @@ def run_once() -> bool:
 
                     if len(buffer) >= _PROCESS_CHUNK:
                         print(f"      [FLUSH] Buffer reached limit, calling append_to_sheet...")
-                        append_to_sheet(worksheet, buffer, sheet_type)
-                        label_new += len(buffer)
-                        sheet_new_rows += len(buffer)
+                        written_now = append_to_sheet(worksheet, buffer, sheet_type)
+                        label_new += written_now
+                        sheet_new_rows += written_now
                         print(f"  [...] [{console_text(label)}] Da ghi tam {label_new} dong")
                         buffer = []
 
@@ -1090,9 +1095,9 @@ def run_once() -> bool:
             print(f"    [FINAL] Buffer final check: fetched_any={fetched_any}, buffer size={len(buffer)}")
             if buffer:
                 print(f"    [FINAL_APPEND] Appending final {len(buffer)} rows to sheet...")
-                append_to_sheet(worksheet, buffer, sheet_type)
-                label_new += len(buffer)
-                sheet_new_rows += len(buffer)
+                written_now = append_to_sheet(worksheet, buffer, sheet_type)
+                label_new += written_now
+                sheet_new_rows += written_now
                 print(f"    [FINAL_APPEND] Completed")
 
             print(f"  [OK] Label '{console_text(label)}': {label_new} dong moi")
@@ -1137,7 +1142,9 @@ def main():
         run_daemon()
         return
 
-    run_once()
+    ok = run_once()
+    if not ok:
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
