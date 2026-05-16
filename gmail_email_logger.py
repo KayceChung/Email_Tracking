@@ -941,6 +941,8 @@ def _build_row(msg: Dict, sheet_type: str, existing_keys: Set[str]) -> Tuple[Opt
         # row[11] = "" # LATEST_UPDATE_BY (empty)
         # row[12] = "" # LATEST_UPDATES (empty)
         # row[13] = "" # CONFIRM_TIME (empty)
+        # Đảm bảo Message_id luôn có giá trị
+        row[STANDARD_HEADERS.index("Message_id")] = msg['id']
         return row, None
 
 
