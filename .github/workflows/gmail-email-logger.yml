@@ -42,7 +42,6 @@ jobs:
         env:
           CREDENTIALS_JSON_B64: ${{ secrets.GMAIL_CREDENTIALS_JSON_B64 }}
           TOKEN_PICKLE_B64: ${{ secrets.GMAIL_TOKEN_PICKLE_B64 }}
-          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
         run: |
           if [ -z "$CREDENTIALS_JSON_B64" ]; then
             echo "Missing secret: GMAIL_CREDENTIALS_JSON_B64"
@@ -50,10 +49,6 @@ jobs:
           fi
           if [ -z "$TOKEN_PICKLE_B64" ]; then
             echo "Missing secret: GMAIL_TOKEN_PICKLE_B64"
-            exit 1
-          fi
-          if [ -z "$SPREADSHEET_ID" ]; then
-            echo "Missing secret: SPREADSHEET_ID"
             exit 1
           fi
 
@@ -82,5 +77,4 @@ jobs:
           GMAIL_HOURS_BACK: "24"
           GMAIL_MAX_RESULTS_PER_LABEL: "0"
           GMAIL_REQUEST_DELAY_SECONDS: "0"
-          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
         run: python gmail_email_logger.py
