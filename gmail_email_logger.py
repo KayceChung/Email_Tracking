@@ -134,7 +134,7 @@ BOOKING_HEADERS = [
     "DURATION",
     "CHUYEN",
     "TRANG_THAI_DH",
-    "Message_id",
+    "Message_id",  # Ensure Message_id is included
     "DAM_NHAN_HO_TRO",
     "DIEM_DI",
     "DIEM_DON",
@@ -157,7 +157,8 @@ STANDARD_HEADERS = [
     "P.I_TIME",
     "LATEST_UPDATE_BY",
     "LATEST_UPDATES",
-    "CONFIRM_TIME"
+    "CONFIRM_TIME",
+    "Message_id"  # Ensure Message_id is included
 ]
 
 SHEET_HEADERS = {
